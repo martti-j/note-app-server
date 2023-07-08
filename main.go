@@ -1,7 +1,7 @@
 package main
 
 import (
-	//user "note_app_server/routers"
+	user "note_app_server/routers"
 	db "note_app_server/services"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +10,8 @@ import (
 func main() {
 	db.CheckConnectionToDB()
 	router := gin.Default()
-	router.GET("/users", db.GetUsernames)
+	router.GET("/users", user.GetUsers)
+	router.GET("/user/:username", user.GetUserByUsername)
+	router.POST("/user/", user.AddUser)
 	router.Run("localhost:8000")
 }
