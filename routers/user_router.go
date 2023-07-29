@@ -33,12 +33,38 @@ func AddUser(c *gin.Context) {
 	if err := c.BindJSON(&newUser); err != nil {
 		return
 	}
-	username := newUser.Username
-	password := newUser.Password
 
-	if err := db.AddUserDB(username, password); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to add user"})
+	if err := db.AddUserDB(newUser); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, newUser)
+}
+
+func DeleteUser(c *gin.Context) {
+	var deleteUser db.User
+
+	if err := c.BindJSON(&deleteUser); err != nil {
+		return
+	}
+
+	if err := db.DeleteUserDB(deleteUser); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"Deleted user": deleteUser.Username})
+}
+
+func Login(c *gin.Context) {
+	var loginUser db.User
+
+	if err := c.BindJSON(&loginUser); err != nil {
+		return
+	}
+
+	if err := db.LoginDB(loginUser); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"Logged in as": loginUser.Username})
 }

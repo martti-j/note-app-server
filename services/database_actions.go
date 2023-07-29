@@ -67,7 +67,6 @@ func GetUsersDB() ([]*User, error) {
 		if err := cursor.Decode(&result); err != nil {
 			return users, errors.New("could't decode the package")
 		}
-		fmt.Printf("%+v\n", result)
 		users = append(users, &result)
 	}
 	if err := cursor.Err(); err != nil {
@@ -90,9 +89,18 @@ func GetUserByUsernameDB(username string) (User, error) {
 	return User{Username: result.Username, Password: result.Password}, nil
 }
 
-func AddUserDB(username string, password string) error {
-	newUser := User{
-		Username: username, Password: password,
+func AddUserDB(newUser User) error {
+
+	allUsers, dataErr := GetUsersDB()
+
+	if dataErr != nil {
+		return errors.New("failed to add user")
+	}
+
+	for i := 0; i < len(allUsers); i++ {
+		if allUsers[i].Username == newUser.Username {
+			return errors.New("username already in use")
+		}
 	}
 
 	_, err := coll.InsertOne(context.TODO(), newUser)
@@ -102,4 +110,26 @@ func AddUserDB(username string, password string) error {
 	}
 
 	return nil
+}
+
+func DeleteUserDB(deleteUser User) error {
+	_, err := coll.DeleteOne(context.TODO(), bson.M{"username": deleteUser.Username})
+	if err != nil {
+		return errors.New("couldn't delete user")
+	}
+	return nil
+}
+
+func LoginDB(loginUser User) error {
+	foundUser, dataErr := GetUserByUsernameDB(loginUser.Username)
+
+	if dataErr != nil {
+		return errors.New("didn't find username from database")
+	}
+
+	if loginUser.Password == foundUser.Password {
+		return nil
+	}
+
+	return errors.New("wrong password")
 }
