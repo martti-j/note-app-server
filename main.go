@@ -15,5 +15,8 @@ func main() {
 	router.POST("/registration/", user.AddUser)
 	router.DELETE("/user/", user.DeleteUser)
 	router.POST("/login/", user.Login)
+	router.GET("/notes/", user.GetNotes)
+	router.POST("/note/", user.AddNote)
+	router.DELETE("/note/", user.DeleteNote)
 	router.Run("localhost:8000")
 }

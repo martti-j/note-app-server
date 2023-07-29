@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -16,6 +17,18 @@ import (
 type User struct {
 	Username string `bson:"username"`
 	Password string `bson:"password"`
+}
+
+type Note struct {
+	Tittle  string             `bson:"tittle"`
+	Content string             `bson:"content"`
+	Writer  string             `bson:"writer"`
+	ID      primitive.ObjectID `bson:"_id"`
+}
+
+type NoteDeleteType struct {
+	ID   primitive.ObjectID `bson:"_id"`
+	User string             `bson:"username"`
 }
 
 func getDotEnvVariable(key string) string {
@@ -40,7 +53,8 @@ var opts *options.ClientOptions = options.Client().ApplyURI(uri).SetServerAPIOpt
 var client, err = mongo.Connect(context.TODO(), opts)
 
 var db = client.Database("noteApp")
-var coll = db.Collection("users")
+var collUsers = db.Collection("users")
+var collNotes = db.Collection("notes")
 
 func CheckConnectionToDB() {
 	if err != nil {
@@ -56,7 +70,7 @@ func CheckConnectionToDB() {
 func GetUsersDB() ([]*User, error) {
 	users := []*User{}
 	filter := bson.D{{}}
-	cursor, err := coll.Find(context.TODO(), filter)
+	cursor, err := collUsers.Find(context.TODO(), filter)
 
 	if err != nil {
 		return users, errors.New("didn't find names")
@@ -79,7 +93,7 @@ func GetUsersDB() ([]*User, error) {
 func GetUserByUsernameDB(username string) (User, error) {
 	filter := bson.D{{Key: "username", Value: username}}
 	var result User
-	cursor := coll.FindOne(context.TODO(), filter).Decode(&result)
+	cursor := collUsers.FindOne(context.TODO(), filter).Decode(&result)
 	fmt.Printf("%+v\n", cursor)
 
 	if cursor == mongo.ErrNoDocuments {
@@ -103,7 +117,7 @@ func AddUserDB(newUser User) error {
 		}
 	}
 
-	_, err := coll.InsertOne(context.TODO(), newUser)
+	_, err := collUsers.InsertOne(context.TODO(), newUser)
 
 	if err != nil {
 		return errors.New("failed to add user")
@@ -113,7 +127,7 @@ func AddUserDB(newUser User) error {
 }
 
 func DeleteUserDB(deleteUser User) error {
-	_, err := coll.DeleteOne(context.TODO(), bson.M{"username": deleteUser.Username})
+	_, err := collUsers.DeleteOne(context.TODO(), bson.M{"username": deleteUser.Username})
 	if err != nil {
 		return errors.New("couldn't delete user")
 	}
@@ -132,4 +146,59 @@ func LoginDB(loginUser User) error {
 	}
 
 	return errors.New("wrong password")
+}
+
+func GetNotesDB() ([]*Note, error) {
+	notes := []*Note{}
+	filter := bson.D{{}}
+	cursor, err := collNotes.Find(context.TODO(), filter)
+
+	if err != nil {
+		return notes, errors.New("didn't find notes")
+	}
+
+	for cursor.Next(context.TODO()) {
+		var result Note
+		if err := cursor.Decode(&result); err != nil {
+			return notes, errors.New("could't decode the package")
+		}
+		notes = append(notes, &result)
+	}
+	if err := cursor.Err(); err != nil {
+		return notes, errors.New("error")
+	}
+
+	return notes, nil
+}
+
+func AddNoteDB(newNote Note) error {
+	_, err := collNotes.InsertOne(context.TODO(), newNote)
+
+	if err != nil {
+		return errors.New("failed to add note")
+	}
+
+	return nil
+}
+
+func DeleteNoteDB(deleteNote NoteDeleteType) error {
+	_, err := collNotes.DeleteOne(context.TODO(), bson.M{"_id": deleteNote.ID})
+	if err != nil {
+		return errors.New("couldn't delete note")
+	}
+	return nil
+}
+
+func GetNoteByIDDB(id primitive.ObjectID) (Note, error) {
+	filter := bson.D{{Key: "_id", Value: id}}
+	var result Note
+	cursor := collNotes.FindOne(context.TODO(), filter).Decode(&result)
+	fmt.Printf("%+v\n", cursor)
+
+	if cursor == mongo.ErrNoDocuments {
+		return Note{}, errors.New("didn't find note id")
+	}
+
+	return Note{Tittle: result.Tittle, Content: result.Content, Writer: result.Writer,
+		ID: result.ID}, nil
 }
