@@ -19,6 +19,12 @@ type User struct {
 	Password string `bson:"password"`
 }
 
+type AddNoteType struct {
+	Tittle  string `bson:"tittle"`
+	Content string `bson:"content"`
+	Writer  string `bson:"writer"`
+}
+
 type Note struct {
 	Tittle  string             `bson:"tittle"`
 	Content string             `bson:"content"`
@@ -171,7 +177,7 @@ func GetNotesDB() ([]*Note, error) {
 	return notes, nil
 }
 
-func AddNoteDB(newNote Note) error {
+func AddNoteDB(newNote AddNoteType) error {
 	_, err := collNotes.InsertOne(context.TODO(), newNote)
 
 	if err != nil {

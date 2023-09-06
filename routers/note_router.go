@@ -18,7 +18,7 @@ func GetNotes(c *gin.Context) {
 }
 
 func AddNote(c *gin.Context) {
-	var newNote db.Note
+	var newNote db.AddNoteType
 
 	if err := c.BindJSON(&newNote); err != nil {
 		return
